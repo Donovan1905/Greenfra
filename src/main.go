@@ -9,11 +9,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
 )
 
 var (
@@ -37,7 +38,9 @@ func init() {
 }
 
 func main() {
-	fmt.Println(asciiart)
+	// Color the ASCII art
+	asciiArtColor := color.New(color.FgHiGreen).SprintFunc()
+	fmt.Println(asciiArtColor(asciiart))
 
 	switch command {
 	case "ec2":
@@ -84,21 +87,22 @@ func handleEC2(instanceType string) {
 		log.Fatalf("failed to describe instance types, %v", err)
 	}
 
-	// Create a tab writer
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+	// Create a table
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)"})
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
+	table.SetRowLine(true)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
-	// Print the headers
-	fmt.Fprintln(w, "Instance Type\tvCPUs\tMemory (MiB)")
-
-	// Print the details of the instance type with dereferenced values
+	// Add instance type details to the table
 	for _, instanceType := range result.InstanceTypes {
 		vcpus := *instanceType.VCpuInfo.DefaultVCpus
 		memory := *instanceType.MemoryInfo.SizeInMiB
-		fmt.Fprintf(w, "%s\t%d\t%d\n", instanceType.InstanceType, vcpus, memory)
+		table.Append([]string{string(instanceType.InstanceType), fmt.Sprintf("%d", vcpus), fmt.Sprintf("%d", memory)})
 	}
 
-	// Flush the writer
-	w.Flush()
+	// Render the table
+	table.Render()
 }
 
 func handleTerraform() (map[string]interface{}, error) {
@@ -163,13 +167,14 @@ func listInstanceTypes() {
 		}
 	}
 
-	// Create a tab writer
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+	// Create a table
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)"})
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
+	table.SetRowLine(true)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
-	// Print the headers
-	fmt.Fprintln(w, "Instance Type\tvCPUs\tMemory (MiB)")
-
-	// Retrieve and print specifications for each instance type from AWS
+	// Retrieve and add specifications for each instance type to the table
 	if len(instanceTypes) > 0 {
 		for instanceType := range instanceTypes {
 			// Load the shared AWS configuration (from ~/.aws/config or environment variables)
@@ -191,17 +196,17 @@ func listInstanceTypes() {
 				log.Fatalf("failed to describe instance types, %v", err)
 			}
 
-			// Print the details of the instance type with dereferenced values
+			// Add instance type details to the table
 			for _, instanceType := range result.InstanceTypes {
 				vcpus := *instanceType.VCpuInfo.DefaultVCpus
 				memory := *instanceType.MemoryInfo.SizeInMiB
-				fmt.Fprintf(w, "%s\t%d\t%d\n", instanceType.InstanceType, vcpus, memory)
+				table.Append([]string{string(instanceType.InstanceType), fmt.Sprintf("%d", vcpus), fmt.Sprintf("%d", memory)})
 			}
 		}
 	} else {
 		fmt.Println("No EC2 instances found in the Terraform plan.")
 	}
 
-	// Flush the writer
-	w.Flush()
+	// Render the table
+	table.Render()
 }
