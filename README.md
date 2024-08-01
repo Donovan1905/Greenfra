@@ -48,6 +48,8 @@ go get github.com/yourusername/greenfra
 Greenfra supports the following commands:
 
 - `ec2` : Estimate the carbon footprint for specified EC2 instance types.
+- `terraform` : List all the instance type in your local terraform changes
+- None : combination of the two previous commands
 
 ### Flags
 Greenfra supports the following flags:
@@ -57,9 +59,19 @@ Greenfra supports the following flags:
 ### Example Commands
 Here are some example commands to use Greenfra:
 
-- To estimate the carbon footprint for a specific instance type:
+- To get the config for a specific instance type:
   ```sh
   go run main.go -instance-type t3.micro ec2
+  ```
+
+- To list all the instance types wihin your local Terraform changes:
+  ```sh
+  go run main.go terraform
+  ```
+
+- To get the config for each instance type present within your local Terraform changes:
+  ```sh
+  go run main.go
   ```
 
 - To display help information:
