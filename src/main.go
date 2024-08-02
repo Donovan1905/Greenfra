@@ -23,11 +23,11 @@ func init() {
 }
 
 func main() {
-	color.New(color.FgHiGreen).Println(cmd.AsciiArt)
+	color.New(color.FgHiGreen).Printf(cmd.AsciiArt)
 
 	switch command {
 	case "ec2":
-		cmd.HandleEC2(instanceType)
+		cmd.HandleEC2()
 	case "terraform":
 		_, err := cmd.HandleTerraform()
 		if err != nil {
@@ -36,8 +36,8 @@ func main() {
 	case "help":
 		fmt.Println("Usage: go run main.go [command] [flags]")
 		fmt.Println("Commands:")
-		fmt.Println("  ec2   - Describe EC2 instance types")
-		fmt.Println("  terraform - Execute Terraform commands")
+		fmt.Println("  ec2        - Describe EC2 instance types")
+		fmt.Println("  terraform  - Execute Terraform commands")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
 	default:

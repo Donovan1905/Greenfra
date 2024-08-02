@@ -1,41 +1,29 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/olekukonko/tablewriter"
+	"greenfra/src/services"
 	"greenfra/src/utils"
+	"log"
 )
 
-func HandleEC2(instanceType string) {
-	// Load the shared AWS configuration
+func HandleEC2() {
 	cfg := utils.LoadAWSConfig()
+	ec2Service := services.NewEC2Service(cfg)
 
-	if instanceType == "" {
-		fmt.Println("Instance type must be specified with -instance-type flag.")
-		return
+	// Execute Terraform plan and show commands
+	plan, err := HandleTerraform()
+	if err != nil {
+		log.Fatalf("Error handling Terraform: %v", err)
 	}
 
-	// Create an EC2 service client
-	svc := utils.CreateEC2Client(cfg)
-
-	// Describe instance types
-	instanceTypes := []string{instanceType}
-	instancesInfo := utils.DescribeInstanceTypes(svc, instanceTypes)
-
-	// Create a table
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)"})
-	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
-	table.SetRowLine(true)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-
-	// Add instance type details to the table
-	for _, info := range instancesInfo {
-		table.Append([]string{info.InstanceType, fmt.Sprintf("%d", info.VCPUs), fmt.Sprintf("%d", info.Memory)})
+	// Extract resource changes
+	changes, err := utils.ExtractResourceChanges(plan)
+	if err != nil {
+		log.Fatalf("Error extracting resource changes: %v", err)
 	}
 
-	// Render the table
-	table.Render()
+	err = ec2Service.Analyze(changes)
+	if err != nil {
+		log.Fatalf("Failed to analyze EC2: %v", err)
+	}
 }

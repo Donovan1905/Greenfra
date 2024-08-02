@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"greenfra/src/services"
 	"os/exec"
 )
 
@@ -17,7 +18,6 @@ func ExecuteTerraformPlan() error {
 	if err != nil {
 		return fmt.Errorf("terraform plan failed: %v\n%s", err, stderr.String())
 	}
-	fmt.Println("Terraform plan executed successfully.\n")
 	return nil
 }
 
@@ -39,4 +39,25 @@ func ExecuteTerraformShow() (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func ExtractResourceChanges(plan map[string]interface{}) ([]services.ResourceChange, error) {
+	var changes []services.ResourceChange
+
+	if resourceChanges, ok := plan["resource_changes"].([]interface{}); ok {
+		for _, change := range resourceChanges {
+			var resourceChange services.ResourceChange
+			changeBytes, err := json.Marshal(change)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(changeBytes, &resourceChange)
+			if err != nil {
+				return nil, err
+			}
+			changes = append(changes, resourceChange)
+		}
+	}
+
+	return changes, nil
 }
