@@ -3,22 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+
+	"greenfra/src/cmd"
 
 	"github.com/fatih/color"
-	"greenfra/src/cmd"
 )
 
 var (
-	command      string
-	instanceType string
+	command     string
+	planPath    string = "greenfra.tfplan"
+	executePlan bool
 )
 
 func init() {
-	flag.StringVar(&instanceType, "instance-type", "", "Specify the EC2 instance type")
+	flag.BoolVar(&executePlan, "exec-plan", false, "Specify wheter or not greenfra should execute terraform plan or you provide the tfplan file")
 	flag.Parse()
-	if len(flag.Args()) >= 1 {
-		command = flag.Args()[0]
+	command = flag.Args()[0]
+	if len(flag.Args()) >= 2 {
+		planPath = flag.Args()[1]
 	}
 }
 
@@ -26,21 +28,15 @@ func main() {
 	color.New(color.FgHiGreen).Printf(cmd.AsciiArt)
 
 	switch command {
-	case "ec2":
-		cmd.HandleEC2()
-	case "terraform":
-		_, err := cmd.HandleTerraform()
-		if err != nil {
-			log.Fatalf("Error handling Terraform: %v", err)
-		}
 	case "help":
 		fmt.Println("Usage: go run main.go [command] [flags]")
 		fmt.Println("Commands:")
-		fmt.Println("  ec2        - Describe EC2 instance types")
-		fmt.Println("  terraform  - Execute Terraform commands")
+		fmt.Println("  analyze <tfplan file path>      - List all the instances in your terraform plan file")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
+	case "analyze":
+		cmd.ListInstanceTypes(executePlan, planPath)
 	default:
-		cmd.ListInstanceTypes()
+		fmt.Println("Unkown command")
 	}
 }

@@ -6,25 +6,27 @@ import (
 	"log"
 )
 
-func HandleTerraform() (map[string]interface{}, error) {
-	err := utils.ExecuteTerraformPlan()
-	if err != nil {
-		return nil, err
+// func HandleTerraform() (map[string]interface{}, error) {
+
+// 	result, err := utils.ExecuteTerraformShow()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return result, nil
+// }
+
+func ListInstanceTypes(executePlan bool, planPath string) {
+	if executePlan {
+		err := utils.ExecuteTerraformPlan(planPath)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
 	}
 
-	result, err := utils.ExecuteTerraformShow()
+	plan, err := utils.ExecuteTerraformShow(planPath)
 	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func ListInstanceTypes() {
-	// Get the Terraform plan JSON output
-	plan, err := HandleTerraform()
-	if err != nil {
-		log.Fatalf("Error handling Terraform: %v", err)
+		log.Fatalf("%v", err)
 	}
 
 	// Extract resource changes
