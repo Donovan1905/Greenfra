@@ -1,5 +1,5 @@
 
-# Greenfra - Greening Your Infrastructure One Line at a Time 🌱
+# Greenfra - Greening your infrastructure one line at a time 🌱
 
 *Powered with Go* 🐹
 
