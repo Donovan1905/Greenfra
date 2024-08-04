@@ -2,7 +2,6 @@
 name: goreleaser
 
 on:
-  pull_request:
   push:
     # run only against tags
     tags:
@@ -33,7 +32,7 @@ jobs:
           # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
           # 'latest', 'nightly', or a semver
-          version: "~> v1"
+          version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GT_TOKEN }}
