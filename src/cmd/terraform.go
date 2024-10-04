@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"greenfra/src/services"
 	"greenfra/src/utils"
 	"log"
+
+	"github.com/fatih/color"
 )
 
 // func HandleTerraform() (map[string]interface{}, error) {
@@ -28,6 +31,14 @@ func ListInstanceTypes(executePlan bool, planPath string) {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+
+	region, err := utils.GetAWSRegion(plan)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	color.New(color.FgHiGreen).Printf("\nAWS Region: ")
+	fmt.Println(region)
 
 	// Extract resource changes
 	changes, err := utils.ExtractResourceChanges(plan)

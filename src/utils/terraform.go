@@ -67,3 +67,9 @@ func ExtractResourceChanges(plan map[string]interface{}) ([]services.ResourceCha
 
 	return changes, nil
 }
+
+func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
+	region := tfplan["configuration"].(map[string]interface{})["provider_config"].(map[string]interface{})["aws"].(map[string]interface{})["expressions"].(map[string]interface{})["region"].(map[string]interface{})["constant_value"].(string)
+
+	return region, nil
+}
