@@ -16,6 +16,8 @@ type EC2Service struct {
 	client *ec2.Client
 }
 
+const powerConsumptionPerVCPU = 2.10 // kWh per vCPU
+
 func NewEC2Service(cfg aws.Config) *EC2Service {
 	return &EC2Service{
 		client: ec2.NewFromConfig(cfg),
@@ -65,8 +67,8 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 	fmt.Print("\n")
 	// Create a table
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)"})
-	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
+	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)"})
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
@@ -74,9 +76,25 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 	for _, instanceType := range result.InstanceTypes {
 		vcpus := *instanceType.VCpuInfo.DefaultVCpus
 		memory := *instanceType.MemoryInfo.SizeInMiB
-		table.Append([]string{string(instanceType.InstanceType), fmt.Sprintf("%d", vcpus), fmt.Sprintf("%d", memory)})
+
+		// Calculate monthly power consumption
+		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus))
+
+		// Append the details including power consumption to the table
+		table.Append([]string{
+			string(instanceType.InstanceType),
+			fmt.Sprintf("%d", vcpus),
+			fmt.Sprintf("%d", memory),
+			fmt.Sprintf("%.2f", powerConsumption/1000), // Format to 2 decimal places
+		})
 	}
 
 	// Render the table
 	table.Render()
+}
+
+func calculateMonthlyPowerConsumption(vCPUs int) float64 {
+	hoursPerDay := 24.0
+	daysPerMonth := 30.0
+	return float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth
 }
