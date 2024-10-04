@@ -49,7 +49,7 @@ func ListInstanceTypes(executePlan bool, planPath string) {
 	// Analyze EC2 instances
 	cfg := utils.LoadAWSConfig()
 	ec2Service := services.NewEC2Service(cfg)
-	err = ec2Service.Analyze(changes)
+	err = ec2Service.Analyze(changes, region)
 	if err != nil {
 		log.Fatalf("Failed to analyze EC2: %v", err)
 	}

@@ -19,13 +19,18 @@ type EC2Service struct {
 const powerConsumptionPerVCPU = 2.10           // Wh per vCPU
 const powerConsumptionPerMBofMemory = 0.000384 // Wh per MB of memory
 
+var carbonCosts = map[string]float64{ // gCO2eq per KWh
+	"eu-west-3":    20,
+	"eu-central-1": 200,
+}
+
 func NewEC2Service(cfg aws.Config) *EC2Service {
 	return &EC2Service{
 		client: ec2.NewFromConfig(cfg),
 	}
 }
 
-func (s *EC2Service) Analyze(changes []ResourceChange) error {
+func (s *EC2Service) Analyze(changes []ResourceChange, region string) error {
 	instanceTypes := make([]string, 0)
 
 	for _, change := range changes {
@@ -46,12 +51,12 @@ func (s *EC2Service) Analyze(changes []ResourceChange) error {
 	}
 
 	if len(instanceTypes) > 0 {
-		s.printInstanceSpecs(instanceTypes)
+		s.printInstanceSpecs(instanceTypes, region)
 	}
 	return nil
 }
 
-func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
+func (s *EC2Service) printInstanceSpecs(instanceTypes []string, region string) {
 	awsInstanceTypes := make([]types.InstanceType, len(instanceTypes))
 	for i, instanceType := range instanceTypes {
 		awsInstanceTypes[i] = types.InstanceType(instanceType)
@@ -68,8 +73,8 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 	fmt.Print("\n")
 	// Create a table
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)"})
-	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
+	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"})
+	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
@@ -79,14 +84,18 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 		memory := *instanceType.MemoryInfo.SizeInMiB
 
 		// Calculate monthly power consumption
-		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus), int(memory))
+		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus), int(memory)) / 1000
+
+		// Calculate monthly carbon impact
+		carbonImpact := calculateCarbonFootprint(powerConsumption, region)
 
 		// Append the details including power consumption to the table
 		table.Append([]string{
 			string(instanceType.InstanceType),
 			fmt.Sprintf("%d", vcpus),
 			fmt.Sprintf("%d", memory),
-			fmt.Sprintf("%.2f", powerConsumption/1000), // Format to 2 decimal places
+			fmt.Sprintf("%.2f", powerConsumption),
+			fmt.Sprintf("%d", int(carbonImpact)),
 		})
 	}
 
@@ -98,4 +107,13 @@ func calculateMonthlyPowerConsumption(vCPUs int, memory int) float64 {
 	hoursPerDay := 24.0
 	daysPerMonth := 30.0
 	return (float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth) + (float64(memory) * powerConsumptionPerMBofMemory * hoursPerDay * daysPerMonth)
+}
+
+func calculateCarbonFootprint(power float64, region string) float64 {
+	regionalCarbonCost, ok := carbonCosts[region]
+	if !ok {
+		fmt.Println("Unknown region. Using default carbon cost.")
+	}
+
+	return power * regionalCarbonCost
 }
