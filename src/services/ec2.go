@@ -16,7 +16,8 @@ type EC2Service struct {
 	client *ec2.Client
 }
 
-const powerConsumptionPerVCPU = 2.10 // kWh per vCPU
+const powerConsumptionPerVCPU = 2.10           // Wh per vCPU
+const powerConsumptionPerMBofMemory = 0.000384 // Wh per MB of memory
 
 func NewEC2Service(cfg aws.Config) *EC2Service {
 	return &EC2Service{
@@ -78,7 +79,7 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 		memory := *instanceType.MemoryInfo.SizeInMiB
 
 		// Calculate monthly power consumption
-		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus))
+		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus), int(memory))
 
 		// Append the details including power consumption to the table
 		table.Append([]string{
@@ -93,8 +94,8 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string) {
 	table.Render()
 }
 
-func calculateMonthlyPowerConsumption(vCPUs int) float64 {
+func calculateMonthlyPowerConsumption(vCPUs int, memory int) float64 {
 	hoursPerDay := 24.0
 	daysPerMonth := 30.0
-	return float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth
+	return (float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth) + (float64(memory) * powerConsumptionPerMBofMemory * hoursPerDay * daysPerMonth)
 }
