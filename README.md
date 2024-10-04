@@ -1,3 +1,4 @@
+![greenfra-white-bg](https://github.com/user-attachments/assets/6012774f-d0ae-4cbf-860a-31c9875bcdbb)
 
 # Greenfra - Greening your infrastructure one line at a time 🌱
 
