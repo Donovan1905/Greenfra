@@ -1,6 +1,6 @@
 ![greenfra-white-bg](https://github.com/user-attachments/assets/6012774f-d0ae-4cbf-860a-31c9875bcdbb)
 
-# Greenfra - Greening your infrastructure one line at a time 🌱
+# Greenfra - Greening your infrastructure one line at a time
 
 *Powered with Go* 🐹
 
@@ -48,36 +48,24 @@ go get github.com/yourusername/greenfra
 ### Commands
 Greenfra supports the following commands:
 
-- `ec2` : Estimate the carbon footprint for specified EC2 instance types.
-- `terraform` : List all the instance type in your local terraform changes
-- None : combination of the two previous commands
+- `analyze` : Estimate the carbon footprint for EC2 changes in your terraform project.
 
 ### Flags
 Greenfra supports the following flags:
 
-- `-instance-type` : Specify the EC2 instance type to analyze. (e.g., `t3.micro`, `g4dn.xlarge`)
+- `-exec-plan` : Choose to whether or not asking greenfra to execute the terraform plan. If not used, you will need to provide a path to a terraform plan file.
 
 ### Example Commands
 Here are some example commands to use Greenfra:
 
-- To get the config for a specific instance type:
+- To estimate the carbon footprint of your instances without using an existing plan:
   ```sh
-  go run main.go -instance-type t3.micro ec2
+  greenfra -exec-plan analyze
   ```
 
-- To list all the instance types wihin your local Terraform changes:
+- To estimate the carbon footprint of your instances with an already generated plan:
   ```sh
-  go run main.go terraform
-  ```
-
-- To get the config for each instance type present within your local Terraform changes:
-  ```sh
-  go run main.go
-  ```
-
-- To display help information:
-  ```sh
-  go run main.go help
+  greenfra analyze <relative path to your plan file>
   ```
 
 ## Contributing
