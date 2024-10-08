@@ -29,6 +29,14 @@ Greenfra is currently under development.
 - Easy to use command-line interface.
 
 ## Installation
+
+Use Homebrew: 
+
+```sh 
+brew tap donovan1905/greenfra 
+brew install Donovan1905/homebrew-greenfra/greenfra
+```
+
 To install Greenfra, you need to have Go installed on your system. Then, you can clone the repository and build the project:
 
 ```sh
