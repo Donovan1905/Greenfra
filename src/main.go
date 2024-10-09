@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"greenfra/src/cmd"
 
@@ -17,6 +18,11 @@ var (
 
 func init() {
 	flag.BoolVar(&executePlan, "exec-plan", false, "Specify wheter or not greenfra should execute terraform plan or you provide the tfplan file")
+
+	if envValue, exists := os.LookupEnv("GREENFRA_EXEC_PLAN"); exists && envValue == "true" {
+		executePlan = true
+	}
+
 	flag.Parse()
 	command = flag.Args()[0]
 	if len(flag.Args()) >= 2 {
