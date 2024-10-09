@@ -61,7 +61,7 @@ Greenfra supports the following commands:
 ### Flags
 Greenfra supports the following flags:
 
-- `-exec-plan` : Choose to whether or not asking greenfra to execute the terraform plan. If not used, you will need to provide a path to a terraform plan file.
+- `-exec-plan` : Choose to whether or not asking greenfra to execute the terraform plan. If not used, you will need to provide a path to a terraform plan file. You can also set the environnement variable GREENFRA_EXEC_PLAN to true to alway execute terraform plan with Greenfra.
 
 ### Example Commands
 Here are some example commands to use Greenfra:
