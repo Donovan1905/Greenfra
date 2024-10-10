@@ -4,7 +4,7 @@
 
 *Powered with Go* 🐹
 
-Estimate the environmental impact of your infrastructure change within your Terraform projects!
+Estimate the environmental impact of your infrastructure changes within your Terraform projects!
 
 ## Table of Contents
 - [Introduction](#introduction)
