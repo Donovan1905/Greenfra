@@ -22,10 +22,10 @@ jobs:
     - name: Build Docker image
       run: |
         IMAGE_TAG=${GITHUB_REF##*/}
-        docker build -t donovan190500/greenfra:$IMAGE_TAG .
+        docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/greenfra:$IMAGE_TAG -t ${{ secrets.DOCKER_HUB_USERNAME }}/greenfra:latest .
 
     - name: Push Docker image
       run: |
         IMAGE_TAG=${GITHUB_REF##*/}
-        docker push donovan190500/greenfra:$IMAGE_TAG
-        docker push donovan190500/greenfra:latest
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/greenfra:$IMAGE_TAG
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/greenfra:latest
