@@ -51,6 +51,8 @@ Alternatively, you can use `go get` to install Greenfra directly:
 go get github.com/yourusername/greenfra
 ```
 
+Or use the docker image provided here : https://hub.docker.com/r/donovan190500/greenfra
+
 ## Usage
 
 ### Commands
