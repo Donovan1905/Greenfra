@@ -4,7 +4,7 @@
 
 *Powered with Go* 🐹
 
-Estimate the environmental impact of your infrastructure change within your Terraform projects!
+Estimate the environmental impact of your infrastructure changes within your Terraform projects!
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -50,6 +50,8 @@ Alternatively, you can use `go get` to install Greenfra directly:
 ```sh
 go get github.com/yourusername/greenfra
 ```
+
+Or use the docker image provided here : https://hub.docker.com/r/donovan190500/greenfra
 
 ## Usage
 

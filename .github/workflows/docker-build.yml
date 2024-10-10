@@ -1,0 +1,30 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Build Docker image
+      run: |
+        IMAGE_TAG=${GITHUB_REF##*/}
+        docker build -t donovan190500/greenfra:$IMAGE_TAG .
+
+    - name: Push Docker image
+      run: |
+        IMAGE_TAG=${GITHUB_REF##*/}
+        docker push donovan190500/greenfra:$IMAGE_TAG
