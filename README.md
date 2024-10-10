@@ -40,15 +40,9 @@ brew install Donovan1905/homebrew-greenfra/greenfra
 To install Greenfra, you need to have Go installed on your system. Then, you can clone the repository and build the project:
 
 ```sh
-git clone https://github.com/yourusername/greenfra.git
+git clone https://github.com/Donovan1905/greenfra.git
 cd greenfra
 go build
-```
-
-Alternatively, you can use `go get` to install Greenfra directly:
-
-```sh
-go get github.com/yourusername/greenfra
 ```
 
 Or use the docker image provided here : https://hub.docker.com/r/donovan190500/greenfra
