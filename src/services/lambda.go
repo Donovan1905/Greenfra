@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/olekukonko/tablewriter"
 )
+
+const meanLamnbdaExecutionDurationMilliseconds = 200
+const meanNumberOfExecution = 100000
 
 type LambdaService struct {
 	client *lambda.Client
@@ -74,7 +78,10 @@ func (s *LambdaService) printLambdasSpecs(lambdaSpecs []struct {
 		vcpus := float64(spec.memorySize) / 1769 // Assuming 1769 MB per vCPU
 
 		// Calculate monthly power consumption
-		powerConsumption := calculateMonthlyPowerConsumption(vcpus, spec.memorySize, hoursInMonth) / 1000 // Convert Wh to kWh
+		powerConsumption := calculateMonthlyPowerConsumption(
+			vcpus,
+			spec.memorySize,
+			(time.Duration(meanLamnbdaExecutionDurationMilliseconds)*time.Millisecond).Hours()*meanNumberOfExecution) / 1000 // Convert Wh to kWh
 
 		// Calculate monthly carbon impact
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)
@@ -84,7 +91,7 @@ func (s *LambdaService) printLambdasSpecs(lambdaSpecs []struct {
 			spec.name,
 			fmt.Sprintf("%.1f", vcpus),
 			fmt.Sprintf("%d", spec.memorySize),
-			fmt.Sprintf("%.2f", powerConsumption),
+			fmt.Sprintf("%.10f", powerConsumption),
 			fmt.Sprintf("%d", int(carbonImpact)),
 		})
 	}
