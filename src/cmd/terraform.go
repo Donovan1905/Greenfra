@@ -53,4 +53,10 @@ func ListInstanceTypes(executePlan bool, planPath string) {
 	if err != nil {
 		log.Fatalf("Failed to analyze EC2: %v", err)
 	}
+	lambdaService := services.NewLambdaService(cfg)
+	err = lambdaService.Analyze(changes, region)
+	if err != nil {
+		log.Fatalf("Failed to analyze Lambda: %v", err)
+	}
+
 }

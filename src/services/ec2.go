@@ -76,7 +76,7 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string, region string) {
 		memory := *instanceType.MemoryInfo.SizeInMiB
 
 		// Calculate monthly power consumption
-		powerConsumption := calculateMonthlyPowerConsumption(int(vcpus), int(memory)) / 1000
+		powerConsumption := calculateMonthlyPowerConsumption(float64(vcpus), int(memory)) / 1000
 
 		// Calculate monthly carbon impact
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)

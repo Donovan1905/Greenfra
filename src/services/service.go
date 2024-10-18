@@ -22,7 +22,7 @@ var carbonCosts = map[string]float64{ // gCO2eq per KWh
 	"eu-central-1": 200,
 }
 
-func calculateMonthlyPowerConsumption(vCPUs int, memory int) float64 {
+func calculateMonthlyPowerConsumption(vCPUs float64, memory int) float64 {
 	hoursPerDay := 24.0
 	daysPerMonth := 30.0
 	return (float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth) + (float64(memory) * powerConsumptionPerMBofMemory * hoursPerDay * daysPerMonth)

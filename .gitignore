@@ -25,3 +25,7 @@ go.work.sum
 .env
 
 dist/
+
+.idea
+.vscode
+.terraform*
