@@ -74,7 +74,7 @@ func (s *LambdaService) printLambdasSpecs(lambdaSpecs []struct {
 		vcpus := float64(spec.memorySize) / 1769 // Assuming 1769 MB per vCPU
 
 		// Calculate monthly power consumption
-		powerConsumption := calculateMonthlyPowerConsumption(vcpus, spec.memorySize) / 1000 // Convert Wh to kWh
+		powerConsumption := calculateMonthlyPowerConsumption(vcpus, spec.memorySize, hoursInMonth) / 1000 // Convert Wh to kWh
 
 		// Calculate monthly carbon impact
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)

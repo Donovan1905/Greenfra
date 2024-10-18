@@ -16,16 +16,15 @@ type Service interface {
 
 const powerConsumptionPerVCPU = 2.10           // Wh per vCPU
 const powerConsumptionPerMBofMemory = 0.000384 // Wh per MB of memory
+const hoursInMonth = 720
 
 var carbonCosts = map[string]float64{ // gCO2eq per KWh
 	"eu-west-3":    20,
 	"eu-central-1": 200,
 }
 
-func calculateMonthlyPowerConsumption(vCPUs float64, memory int) float64 {
-	hoursPerDay := 24.0
-	daysPerMonth := 30.0
-	return (float64(vCPUs) * powerConsumptionPerVCPU * hoursPerDay * daysPerMonth) + (float64(memory) * powerConsumptionPerMBofMemory * hoursPerDay * daysPerMonth)
+func calculateMonthlyPowerConsumption(vCPUs float64, memory int, durationInHours float64) float64 {
+	return (vCPUs * powerConsumptionPerVCPU * durationInHours) + (float64(memory) * powerConsumptionPerMBofMemory * durationInHours)
 }
 
 func calculateCarbonFootprint(power float64, region string) float64 {
