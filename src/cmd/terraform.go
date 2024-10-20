@@ -9,16 +9,6 @@ import (
 	"github.com/fatih/color"
 )
 
-// func HandleTerraform() (map[string]interface{}, error) {
-
-// 	result, err := utils.ExecuteTerraformShow()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return result, nil
-// }
-
 func ListInstanceTypes(executePlan bool, planPath string) {
 	if executePlan {
 		err := utils.ExecuteTerraformPlan(planPath)
