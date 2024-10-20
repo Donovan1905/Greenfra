@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"greenfra/src/services"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 func ExecuteTerraformPlan(planPath string) error {
@@ -72,4 +75,78 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	region := tfplan["configuration"].(map[string]interface{})["provider_config"].(map[string]interface{})["aws"].(map[string]interface{})["expressions"].(map[string]interface{})["region"].(map[string]interface{})["constant_value"].(string)
 
 	return region, nil
+}
+
+///
+
+func ParseMetadataComments(tfFilePath string) (map[string]string, string, string, error) {
+	// Read the existing .tf file
+	content, err := os.ReadFile(tfFilePath)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	metadata := make(map[string]string)
+	var resourceType, resourceIdentifier string
+
+	for i, line := range lines {
+		// Check if the line contains the start of metadata comments
+		if strings.HasPrefix(line, "/* greenfra") {
+			for j := i + 1; j < len(lines); j++ {
+				line = lines[j]
+				// Break if we reach the end of the comment block
+				if strings.HasPrefix(line, "*/") {
+					break
+				}
+				// Extract key-value pairs
+				if strings.Contains(line, "=") {
+					parts := strings.SplitN(line, "=", 2)
+					if len(parts) == 2 {
+						key := strings.TrimSpace(parts[0])
+						value := strings.TrimSpace(parts[1])
+						metadata[key] = value // Store all key-value pairs
+					}
+				}
+			}
+		}
+
+		// Check for resource type and identifier
+		if strings.HasPrefix(line, "resource ") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				resourceType = parts[1]
+				resourceIdentifier = parts[2]
+			}
+		}
+	}
+
+	return metadata, resourceType, resourceIdentifier, nil
+}
+
+func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
+	metadataMap := make(map[string]map[string]string) // map of resource identifier to metadata
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(info.Name(), ".tf") {
+			metadata, resourceType, resourceIdentifier, err := ParseMetadataComments(path)
+			if err != nil {
+				return fmt.Errorf("error parsing %s: %v", path, err)
+			}
+			// Store the metadata in the map
+			if resourceIdentifier != "" && resourceType != "" {
+				metadataMap[resourceIdentifier] = metadata
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return metadataMap, nil
 }
