@@ -41,7 +41,7 @@ func main() {
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
 	case "analyze":
-		cmd.ListInstanceTypes(executePlan, planPath)
+		cmd.ListResources(executePlan, planPath)
 	default:
 		fmt.Println("Unkown command")
 	}
