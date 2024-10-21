@@ -9,7 +9,7 @@ import (
 	"github.com/fatih/color"
 )
 
-func ListInstanceTypes(executePlan bool, planPath string) {
+func ListResources(executePlan bool, planPath string) {
 	if executePlan {
 		err := utils.ExecuteTerraformPlan(planPath)
 		if err != nil {
