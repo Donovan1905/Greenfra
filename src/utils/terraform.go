@@ -77,10 +77,7 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	return region, nil
 }
 
-///
-
 func ParseMetadataComments(tfFilePath string) (map[string]string, string, string, error) {
-	// Read the existing .tf file
 	content, err := os.ReadFile(tfFilePath)
 	if err != nil {
 		return nil, "", "", err
@@ -91,27 +88,23 @@ func ParseMetadataComments(tfFilePath string) (map[string]string, string, string
 	var resourceType, resourceIdentifier string
 
 	for i, line := range lines {
-		// Check if the line contains the start of metadata comments
 		if strings.HasPrefix(line, "/* greenfra") {
 			for j := i + 1; j < len(lines); j++ {
 				line = lines[j]
-				// Break if we reach the end of the comment block
 				if strings.HasPrefix(line, "*/") {
 					break
 				}
-				// Extract key-value pairs
 				if strings.Contains(line, "=") {
 					parts := strings.SplitN(line, "=", 2)
 					if len(parts) == 2 {
 						key := strings.TrimSpace(parts[0])
 						value := strings.TrimSpace(parts[1])
-						metadata[key] = value // Store all key-value pairs
+						metadata[key] = value
 					}
 				}
 			}
 		}
 
-		// Check for resource type and identifier
 		if strings.HasPrefix(line, "resource ") {
 			parts := strings.Fields(line)
 			if len(parts) >= 3 {
@@ -125,7 +118,7 @@ func ParseMetadataComments(tfFilePath string) (map[string]string, string, string
 }
 
 func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
-	metadataMap := make(map[string]map[string]string) // map of resource identifier to metadata
+	metadataMap := make(map[string]map[string]string)
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -136,8 +129,8 @@ func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
 			if err != nil {
 				return fmt.Errorf("error parsing %s: %v", path, err)
 			}
-			// Store the metadata in the map
-			if resourceIdentifier != "" && resourceType != "" {
+
+			if resourceIdentifier != "" && resourceType != "" && len(metadata) > 0 {
 				metadataMap[resourceIdentifier] = metadata
 			}
 		}
