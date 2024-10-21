@@ -5,8 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"greenfra/src/services"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
 )
+
+type ResourceMetadata struct {
+	ResourceReference string            `json:"resource_reference"`
+	Metadata          map[string]string `json:"metadata"`
+}
 
 func ExecuteTerraformPlan(planPath string) error {
 	cmdPlan := exec.Command("terraform", "plan", "-out", planPath)
@@ -72,4 +81,65 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	region := tfplan["configuration"].(map[string]interface{})["provider_config"].(map[string]interface{})["aws"].(map[string]interface{})["expressions"].(map[string]interface{})["region"].(map[string]interface{})["constant_value"].(string)
 
 	return region, nil
+}
+
+func ParseMetadataComments(tfFilePath string) ([]ResourceMetadata, error) {
+	content, err := os.ReadFile(tfFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	re := regexp.MustCompile(`/\*\s*greenfra\s*\n((?:[^\n]*\n)*?)\*/\s*resource\s+"(\w+)"\s+"(\w+)"\s*{`)
+	matches := re.FindAllStringSubmatch(string(content), -1)
+
+	var resources []ResourceMetadata
+
+	for _, match := range matches {
+		metadata := make(map[string]string)
+		keyValuePairs := match[1]
+
+		for _, line := range strings.Split(keyValuePairs, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				metadata[key] = value
+			}
+		}
+
+		resourceReference := fmt.Sprintf("%s.%s", match[2], match[3])
+		resources = append(resources, ResourceMetadata{
+			ResourceReference: resourceReference,
+			Metadata:          metadata,
+		})
+	}
+
+	return resources, nil
+}
+
+func ParseTfFilesInDirectory(dir string) ([]ResourceMetadata, error) {
+	var allResources []ResourceMetadata
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(info.Name(), ".tf") {
+			resources, err := ParseMetadataComments(path)
+			if err != nil {
+				return fmt.Errorf("error parsing %s: %v", path, err)
+			}
+			allResources = append(allResources, resources...)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return allResources, nil
 }
