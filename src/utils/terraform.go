@@ -8,8 +8,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+type ResourceMetadata struct {
+	ResourceReference string            `json:"resource_reference"`
+	Metadata          map[string]string `json:"metadata"`
+}
 
 func ExecuteTerraformPlan(planPath string) error {
 	cmdPlan := exec.Command("terraform", "plan", "-out", planPath)
@@ -77,67 +83,56 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	return region, nil
 }
 
-func ParseMetadataComments(tfFilePath string) (map[string]string, []string, error) {
+func ParseMetadataComments(tfFilePath string) ([]ResourceMetadata, error) {
 	content, err := os.ReadFile(tfFilePath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	lines := strings.Split(string(content), "\n")
-	metadata := make(map[string]string)
-	var resourceIdentifiers []string
+	re := regexp.MustCompile(`/\*\s*greenfra\s*\n((?:[^\n]*\n)*?)\*/\s*resource\s+"(\w+)"\s+"(\w+)"\s*{`)
+	matches := re.FindAllStringSubmatch(string(content), -1)
 
-	for i, line := range lines {
-		if strings.HasPrefix(line, "/* greenfra") {
-			for j := i + 1; j < len(lines); j++ {
-				line = lines[j]
-				if strings.HasPrefix(line, "*/") {
-					break
-				}
-				if strings.Contains(line, "=") {
-					parts := strings.SplitN(line, "=", 2)
-					if len(parts) == 2 {
-						key := strings.TrimSpace(parts[0])
-						value := strings.TrimSpace(parts[1])
-						metadata[key] = value
-					}
-				}
+	var resources []ResourceMetadata
+
+	for _, match := range matches {
+		metadata := make(map[string]string)
+		keyValuePairs := match[1]
+
+		for _, line := range strings.Split(keyValuePairs, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				metadata[key] = value
 			}
 		}
 
-		if strings.HasPrefix(line, "resource ") {
-			parts := strings.Fields(line)
-			if len(parts) >= 3 {
-				resourceType := parts[1]
-				resourceIdentifier := parts[2]
-				if len(metadata) > 0 {
-					resourceIdentifiers = append(resourceIdentifiers, fmt.Sprintf("%s.%s", resourceType, resourceIdentifier)) // Store full resource identifier
-				}
-			}
-		}
+		resourceReference := fmt.Sprintf("%s.%s", match[2], match[3])
+		resources = append(resources, ResourceMetadata{
+			ResourceReference: resourceReference,
+			Metadata:          metadata,
+		})
 	}
 
-	return metadata, resourceIdentifiers, nil
+	return resources, nil
 }
 
-func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
-	metadataMap := make(map[string]map[string]string)
+func ParseTfFilesInDirectory(dir string) ([]ResourceMetadata, error) {
+	var allResources []ResourceMetadata
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".tf") {
-			metadata, resourceIdentifiers, err := ParseMetadataComments(path)
+			resources, err := ParseMetadataComments(path)
 			if err != nil {
 				return fmt.Errorf("error parsing %s: %v", path, err)
 			}
-
-			for _, resourceIdentifier := range resourceIdentifiers {
-				if len(metadata) > 0 {
-					metadataMap[resourceIdentifier] = metadata
-				}
-			}
+			allResources = append(allResources, resources...)
 		}
 		return nil
 	})
@@ -146,5 +141,5 @@ func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
 		return nil, err
 	}
 
-	return metadataMap, nil
+	return allResources, nil
 }
