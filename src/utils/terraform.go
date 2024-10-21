@@ -77,15 +77,15 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	return region, nil
 }
 
-func ParseMetadataComments(tfFilePath string) (map[string]string, string, string, error) {
+func ParseMetadataComments(tfFilePath string) (map[string]string, []string, error) {
 	content, err := os.ReadFile(tfFilePath)
 	if err != nil {
-		return nil, "", "", err
+		return nil, nil, err
 	}
 
 	lines := strings.Split(string(content), "\n")
 	metadata := make(map[string]string)
-	var resourceType, resourceIdentifier string
+	var resourceIdentifiers []string
 
 	for i, line := range lines {
 		if strings.HasPrefix(line, "/* greenfra") {
@@ -108,13 +108,16 @@ func ParseMetadataComments(tfFilePath string) (map[string]string, string, string
 		if strings.HasPrefix(line, "resource ") {
 			parts := strings.Fields(line)
 			if len(parts) >= 3 {
-				resourceType = parts[1]
-				resourceIdentifier = parts[2]
+				resourceType := parts[1]
+				resourceIdentifier := parts[2]
+				if len(metadata) > 0 {
+					resourceIdentifiers = append(resourceIdentifiers, fmt.Sprintf("%s.%s", resourceType, resourceIdentifier)) // Store full resource identifier
+				}
 			}
 		}
 	}
 
-	return metadata, resourceType, resourceIdentifier, nil
+	return metadata, resourceIdentifiers, nil
 }
 
 func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
@@ -125,13 +128,15 @@ func ParseTfFilesInDirectory(dir string) (map[string]map[string]string, error) {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".tf") {
-			metadata, resourceType, resourceIdentifier, err := ParseMetadataComments(path)
+			metadata, resourceIdentifiers, err := ParseMetadataComments(path)
 			if err != nil {
 				return fmt.Errorf("error parsing %s: %v", path, err)
 			}
 
-			if resourceIdentifier != "" && resourceType != "" && len(metadata) > 0 {
-				metadataMap[resourceIdentifier] = metadata
+			for _, resourceIdentifier := range resourceIdentifiers {
+				if len(metadata) > 0 {
+					metadataMap[resourceIdentifier] = metadata
+				}
 			}
 		}
 		return nil
