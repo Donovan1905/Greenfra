@@ -9,12 +9,17 @@ import (
 	"github.com/fatih/color"
 )
 
-func ListInstanceTypes(executePlan bool, planPath string) {
+func ListResources(executePlan bool, planPath string) {
 	if executePlan {
 		err := utils.ExecuteTerraformPlan(planPath)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+	}
+
+	greenfraComments, err := utils.ParseTfFilesInDirectory(".")
+	if err != nil {
+		return
 	}
 
 	plan, err := utils.ExecuteTerraformShow(planPath)
@@ -30,13 +35,11 @@ func ListInstanceTypes(executePlan bool, planPath string) {
 	color.New(color.FgHiGreen).Printf("\nAWS Region: ")
 	fmt.Println(region)
 
-	// Extract resource changes
 	changes, err := utils.ExtractResourceChanges(plan)
 	if err != nil {
 		log.Fatalf("Error extracting resource changes: %v", err)
 	}
 
-	// Analyze EC2 instances
 	cfg := utils.LoadAWSConfig()
 	ec2Service := services.NewEC2Service(cfg)
 	err = ec2Service.Analyze(changes, region)
@@ -44,7 +47,7 @@ func ListInstanceTypes(executePlan bool, planPath string) {
 		log.Fatalf("Failed to analyze EC2: %v", err)
 	}
 	lambdaService := services.NewLambdaService(cfg)
-	err = lambdaService.Analyze(changes, region)
+	err = lambdaService.Analyze(changes, region, greenfraComments)
 	if err != nil {
 		log.Fatalf("Failed to analyze Lambda: %v", err)
 	}

@@ -59,6 +59,30 @@ Greenfra supports the following flags:
 
 - `-exec-plan` : Choose to whether or not asking greenfra to execute the terraform plan. If not used, you will need to provide a path to a terraform plan file. You can also set the environnement variable GREENFRA_EXEC_PLAN to true to alway execute terraform plan with Greenfra.
 
+### Comments 
+
+You can add greenfra comment to your terraform files to provide additional informations about your resources (number of execution per month, mean execution duration, etc...).
+
+Currently only this comment for Lambda are supported : 
+- monthly_invocation : the number of Lambda invocations expected per month for this function
+- mean_execution_time : the mean execution time expected for this function in milliseconds
+
+The format is the following : 
+
+```terraform
+/* greenfra
+<key>=<value>
+*/
+```
+
+Example for lambda : 
+```terraform
+/* greenfra
+monthly_invocation=1000000
+mean_execution_time=300
+*/
+```
+
 ### Example Commands
 Here are some example commands to use Greenfra:
 

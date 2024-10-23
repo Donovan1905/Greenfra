@@ -28,7 +28,6 @@ func (s *EC2Service) Analyze(changes []ResourceChange, region string) error {
 	for _, change := range changes {
 		if change.Type == "aws_instance" {
 
-			// Navigate into the 'after' map to get the 'instance_type'
 			if after, ok := change.Change["after"].(map[string]interface{}); ok {
 				instanceType, ok := after["instance_type"].(string)
 				if !ok {
@@ -63,25 +62,20 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string, region string) {
 		log.Fatalf("Failed to describe instance types: %v", err)
 	}
 	fmt.Print("\n")
-	// Create a table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"})
 	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
-	// Add instance type details to the table
 	for _, instanceType := range result.InstanceTypes {
 		vcpus := *instanceType.VCpuInfo.DefaultVCpus
 		memory := *instanceType.MemoryInfo.SizeInMiB
 
-		// Calculate monthly power consumption
 		powerConsumption := calculateMonthlyPowerConsumption(float64(vcpus), int(memory), hoursInMonth) / 1000
 
-		// Calculate monthly carbon impact
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)
 
-		// Append the details including power consumption to the table
 		table.Append([]string{
 			string(instanceType.InstanceType),
 			fmt.Sprintf("%d", vcpus),
@@ -91,6 +85,5 @@ func (s *EC2Service) printInstanceSpecs(instanceTypes []string, region string) {
 		})
 	}
 
-	// Render the table
 	table.Render()
 }

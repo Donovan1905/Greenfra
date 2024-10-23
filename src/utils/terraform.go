@@ -5,17 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"greenfra/src/services"
+	"greenfra/src/types"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
-
-type ResourceMetadata struct {
-	ResourceReference string            `json:"resource_reference"`
-	Metadata          map[string]string `json:"metadata"`
-}
 
 func ExecuteTerraformPlan(planPath string) error {
 	cmdPlan := exec.Command("terraform", "plan", "-out", planPath)
@@ -83,7 +79,7 @@ func GetAWSRegion(tfplan map[string]interface{}) (string, error) {
 	return region, nil
 }
 
-func ParseMetadataComments(tfFilePath string) ([]ResourceMetadata, error) {
+func ParseMetadataComments(tfFilePath string) (map[string]types.ResourceMetadata, error) {
 	content, err := os.ReadFile(tfFilePath)
 	if err != nil {
 		return nil, err
@@ -92,7 +88,7 @@ func ParseMetadataComments(tfFilePath string) ([]ResourceMetadata, error) {
 	re := regexp.MustCompile(`/\*\s*greenfra\s*\n((?:[^\n]*\n)*?)\*/\s*resource\s+"(\w+)"\s+"(\w+)"\s*{`)
 	matches := re.FindAllStringSubmatch(string(content), -1)
 
-	var resources []ResourceMetadata
+	resources := make(map[string]types.ResourceMetadata)
 
 	for _, match := range matches {
 		metadata := make(map[string]string)
@@ -111,17 +107,17 @@ func ParseMetadataComments(tfFilePath string) ([]ResourceMetadata, error) {
 		}
 
 		resourceReference := fmt.Sprintf("%s.%s", match[2], match[3])
-		resources = append(resources, ResourceMetadata{
+		resources[resourceReference] = types.ResourceMetadata{
 			ResourceReference: resourceReference,
 			Metadata:          metadata,
-		})
+		}
 	}
 
 	return resources, nil
 }
 
-func ParseTfFilesInDirectory(dir string) ([]ResourceMetadata, error) {
-	var allResources []ResourceMetadata
+func ParseTfFilesInDirectory(dir string) (map[string]types.ResourceMetadata, error) {
+	allResources := make(map[string]types.ResourceMetadata)
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -132,7 +128,10 @@ func ParseTfFilesInDirectory(dir string) ([]ResourceMetadata, error) {
 			if err != nil {
 				return fmt.Errorf("error parsing %s: %v", path, err)
 			}
-			allResources = append(allResources, resources...)
+			// Merge the resources from the current file into the allResources map
+			for k, v := range resources {
+				allResources[k] = v
+			}
 		}
 		return nil
 	})
