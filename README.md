@@ -108,4 +108,4 @@ We welcome contributions from the community! Here’s how you can help:
 
 
 ## License
-Greenfra is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+Greenfra is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for more information.
