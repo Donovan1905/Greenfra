@@ -3,14 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	greenfraTypes "greenfra/src/types"
-	"log"
-	"os"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/olekukonko/tablewriter"
+	greenfraTypes "greenfra/src/types"
+	"log"
+	"os"
 )
 
 type EC2Service struct {
@@ -24,38 +23,51 @@ func NewEC2Service(cfg aws.Config) *EC2Service {
 }
 
 func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments map[string]greenfraTypes.ResourceMetadata) error {
-	instanceSpecs := make(map[string][]greenfraTypes.ResourceMetadata) // Map to hold instance types and their references
+	ec2Specs := make([]struct {
+		name         string
+		instanceType string
+	}, 0)
 
 	for _, change := range changes {
 		if change.Type == "aws_instance" {
+
 			if after, ok := change.Change["after"].(map[string]interface{}); ok {
+				name := change.Address
+
 				instanceType, ok := after["instance_type"].(string)
 				if !ok {
-					log.Printf("Warning: instance_type is not a string or is missing in change: %v", change.Change)
+					log.Printf("Warning: instance type is not a string or is missing in change: %v", change.Change)
 					continue
 				}
-				// Capture the resource reference and add it to the map
-				resourceMetadata := greenfraTypes.ResourceMetadata{
-					ResourceReference: change.Address,
-					// You can initialize Metadata as needed
-				}
-				instanceSpecs[instanceType] = append(instanceSpecs[instanceType], resourceMetadata)
+
+				ec2Specs = append(ec2Specs, struct {
+					name         string
+					instanceType string
+				}{name: name, instanceType: instanceType})
 			} else {
 				log.Printf("Warning: 'after' map is missing in change: %v", change.Change)
 			}
 		}
 	}
 
-	if len(instanceSpecs) > 0 {
-		s.printInstanceSpecs(instanceSpecs, region)
+	if len(ec2Specs) > 0 {
+		s.printInstanceSpecs(ec2Specs, region)
 	}
 	return nil
 }
 
-func (s *EC2Service) printInstanceSpecs(instanceSpecs map[string][]greenfraTypes.ResourceMetadata, region string) {
-	awsInstanceTypes := make([]types.InstanceType, 0)
+func (s *EC2Service) printInstanceSpecs(ec2Specs []struct {
+	name         string
+	instanceType string
+}, region string) {
 
-	for instanceType := range instanceSpecs {
+	instanceTypeMap := make(map[string]struct{})
+	for _, spec := range ec2Specs {
+		instanceTypeMap[spec.instanceType] = struct{}{}
+	}
+
+	awsInstanceTypes := make([]types.InstanceType, 0)
+	for instanceType := range instanceTypeMap {
 		awsInstanceTypes = append(awsInstanceTypes, types.InstanceType(instanceType))
 	}
 
@@ -67,9 +79,10 @@ func (s *EC2Service) printInstanceSpecs(instanceSpecs map[string][]greenfraTypes
 	if err != nil {
 		log.Fatalf("Failed to describe instance types: %v", err)
 	}
+
 	fmt.Print("\n")
 	table := tablewriter.NewWriter(os.Stdout)
-	headers := []string{"Instance Type", "Resource References", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"}
+	headers := []string{"Resource Reference", "Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"}
 	table.SetHeader(headers)
 
 	colors := make([]tablewriter.Colors, len(headers))
@@ -81,25 +94,28 @@ func (s *EC2Service) printInstanceSpecs(instanceSpecs map[string][]greenfraTypes
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
+	instanceTypeDetails := make(map[string]types.InstanceTypeInfo)
+
 	for _, instanceType := range result.InstanceTypes {
-		vcpus := *instanceType.VCpuInfo.DefaultVCpus
-		memory := *instanceType.MemoryInfo.SizeInMiB
+		instanceTypeDetails[string(instanceType.InstanceType)] = instanceType
+	}
+
+	for _, spec := range ec2Specs {
+		instanceTypeDetail, exists := instanceTypeDetails[spec.instanceType]
+		if !exists {
+			log.Printf("Warning: Instance type %s not found in DescribeInstanceTypes result.", spec.instanceType)
+			continue
+		}
+
+		vcpus := *instanceTypeDetail.VCpuInfo.DefaultVCpus
+		memory := *instanceTypeDetail.MemoryInfo.SizeInMiB
 
 		powerConsumption := calculateMonthlyPowerConsumption(float64(vcpus), int(memory), hoursInMonth) / 1000
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)
 
-		references := instanceSpecs[string(instanceType.InstanceType)]
-		referenceList := ""
-		for _, ref := range references {
-			referenceList += ref.ResourceReference + ", "
-		}
-		if len(referenceList) > 0 {
-			referenceList = referenceList[:len(referenceList)-2]
-		}
-
 		table.Append([]string{
-			string(instanceType.InstanceType),
-			referenceList,
+			spec.name,
+			spec.instanceType,
 			fmt.Sprintf("%d", vcpus),
 			fmt.Sprintf("%d", memory),
 			fmt.Sprintf("%.2f", powerConsumption),
