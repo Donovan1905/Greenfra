@@ -42,7 +42,7 @@ func ListResources(executePlan bool, planPath string) {
 
 	cfg := utils.LoadAWSConfig()
 	ec2Service := services.NewEC2Service(cfg)
-	err = ec2Service.Analyze(changes, region)
+	err = ec2Service.Analyze(changes, region, greenfraComments)
 	if err != nil {
 		log.Fatalf("Failed to analyze EC2: %v", err)
 	}
