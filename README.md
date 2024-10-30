@@ -61,11 +61,16 @@ Greenfra supports the following flags:
 
 ### Comments 
 
-You can add greenfra comment to your terraform files to provide additional informations about your resources (number of execution per month, mean execution duration, etc...).
+You can add greenfra comment to your terraform files to provide additional information about your resources (number of execution per month, mean execution duration, etc...).
 
-Currently only this comment for Lambda are supported : 
+**Currently, this comment are supported :** 
+
+Lambda : 
 - monthly_invocation : the number of Lambda invocations expected per month for this function
 - mean_execution_time : the mean execution time expected for this function in milliseconds
+
+EC2 : 
+- usage_percentage : the percentage of an EC2 instance usage per month (50 % = 15 days)
 
 The format is the following : 
 

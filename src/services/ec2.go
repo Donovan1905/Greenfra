@@ -9,7 +9,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 	greenfraTypes "greenfra/src/types"
 	"log"
+	"math"
 	"os"
+	"strconv"
 )
 
 type EC2Service struct {
@@ -24,8 +26,9 @@ func NewEC2Service(cfg aws.Config) *EC2Service {
 
 func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments map[string]greenfraTypes.ResourceMetadata) error {
 	ec2Specs := make([]struct {
-		name         string
-		instanceType string
+		name          string
+		instanceType  string
+		hoursPerMonth int
 	}, 0)
 
 	for _, change := range changes {
@@ -40,10 +43,26 @@ func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments m
 					continue
 				}
 
+				var usagePercentage int
+				var hoursPerMonth int
+
+				if resource, exists := comments[name]; exists {
+					var err error
+					fmt.Println(comments[name])
+					usagePercentage, err = strconv.Atoi(resource.Metadata["usage_percentage"])
+					hoursPerMonth = int(math.Round(hoursInMonth * (float64(usagePercentage) / 100.0)))
+					if err != nil {
+						log.Fatalf("usage_percentage is not int : %v", err)
+					}
+				} else {
+					hoursPerMonth = hoursInMonth
+				}
+
 				ec2Specs = append(ec2Specs, struct {
-					name         string
-					instanceType string
-				}{name: name, instanceType: instanceType})
+					name          string
+					instanceType  string
+					hoursPerMonth int
+				}{name: name, instanceType: instanceType, hoursPerMonth: hoursPerMonth})
 			} else {
 				log.Printf("Warning: 'after' map is missing in change: %v", change.Change)
 			}
@@ -51,15 +70,16 @@ func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments m
 	}
 
 	if len(ec2Specs) > 0 {
-		s.printInstanceSpecs(ec2Specs, region)
+		s.printInstanceSpecs(ec2Specs, region, comments)
 	}
 	return nil
 }
 
 func (s *EC2Service) printInstanceSpecs(ec2Specs []struct {
-	name         string
-	instanceType string
-}, region string) {
+	name          string
+	instanceType  string
+	hoursPerMonth int
+}, region string, comments map[string]greenfraTypes.ResourceMetadata) {
 
 	instanceTypeMap := make(map[string]struct{})
 	for _, spec := range ec2Specs {
@@ -110,7 +130,7 @@ func (s *EC2Service) printInstanceSpecs(ec2Specs []struct {
 		vcpus := *instanceTypeDetail.VCpuInfo.DefaultVCpus
 		memory := *instanceTypeDetail.MemoryInfo.SizeInMiB
 
-		powerConsumption := calculateMonthlyPowerConsumption(float64(vcpus), int(memory), hoursInMonth) / 1000
+		powerConsumption := calculateMonthlyPowerConsumption(float64(vcpus), int(memory), float64(spec.hoursPerMonth)) / 1000
 		carbonImpact := calculateCarbonFootprint(powerConsumption, region)
 
 		table.Append([]string{
