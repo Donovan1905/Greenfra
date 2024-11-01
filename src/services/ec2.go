@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	greenfraTypes "greenfra/src/types"
 	"log"
@@ -48,12 +49,17 @@ func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments m
 
 				if resource, exists := comments[name]; exists {
 					var err error
-					fmt.Println(comments[name])
 					usagePercentage, err = strconv.Atoi(resource.Metadata["usage_percentage"])
-					hoursPerMonth = int(math.Round(hoursInMonth * (float64(usagePercentage) / 100.0)))
 					if err != nil {
 						log.Fatalf("usage_percentage is not int : %v", err)
 					}
+
+					if usagePercentage < 1 || usagePercentage > 100 {
+						color.New(color.FgHiYellow).Printf("Warning on %s: usage_percentage (%d) must be between 1 and 100. Using default value of 100%%\n", resource.ResourceReference, usagePercentage)
+						usagePercentage = 100
+					}
+
+					hoursPerMonth = int(math.Round(hoursInMonth * (float64(usagePercentage) / 100.0)))
 				} else {
 					hoursPerMonth = hoursInMonth
 				}
