@@ -128,7 +128,6 @@ func ParseTfFilesInDirectory(dir string) (map[string]types.ResourceMetadata, err
 			if err != nil {
 				return fmt.Errorf("error parsing %s: %v", path, err)
 			}
-			// Merge the resources from the current file into the allResources map
 			for k, v := range resources {
 				allResources[k] = v
 			}
@@ -136,6 +135,11 @@ func ParseTfFilesInDirectory(dir string) (map[string]types.ResourceMetadata, err
 		return nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
+	err = types.ValidateComments(allResources)
 	if err != nil {
 		return nil, err
 	}
