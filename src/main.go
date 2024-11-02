@@ -31,7 +31,7 @@ func init() {
 }
 
 func main() {
-	color.New(color.FgHiGreen).Printf(cmd.AsciiArt)
+	color.New(color.FgHiGreen).Println(cmd.AsciiArt)
 
 	switch command {
 	case "help":
