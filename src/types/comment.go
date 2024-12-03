@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/fatih/color"
+	"fmt"
 	"log"
 	"strings"
 )
@@ -29,7 +29,7 @@ func ValidateComments(resources map[string]ResourceMetadata) error {
 
 		allowedKeys, exists := AllowedResourceKeys[resourceType]
 		if !exists {
-			color.New(color.FgHiRed).Printf("comment for resource type %s are not handled for now\n", resourceType)
+			fmt.Printf("\x1b[31mComment for resource type %s is not handled for now\x1b[0m\n", resourceType)
 			errors = append(errors, key)
 			continue
 		}
@@ -43,7 +43,7 @@ func ValidateComments(resources map[string]ResourceMetadata) error {
 				}
 			}
 			if !isAllowed {
-				color.New(color.FgHiRed).Printf("invalid metadata key '%s' for resource type '%s'\n", metadataKey, resourceType)
+				fmt.Printf("\x1b[31mInvalid metadata key '%s' for resource type '%s'\x1b[0m\n", metadataKey, resourceType)
 				errors = append(errors, key)
 			}
 		}

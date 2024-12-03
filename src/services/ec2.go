@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	greenfraTypes "greenfra/src/types"
 	"log"
@@ -55,7 +54,7 @@ func (s *EC2Service) Analyze(changes []ResourceChange, region string, comments m
 					}
 
 					if usagePercentage < 1 || usagePercentage > 100 {
-						color.New(color.FgHiYellow).Printf("Warning on %s: usage_percentage (%d) must be between 1 and 100. Using default value of 100%%\n", resource.ResourceReference, usagePercentage)
+						fmt.Printf("\x1b[33mWarning on %s: usage_percentage (%d) must be between 1 and 100. Using default value of 100%%\x1b[0m\n", resource.ResourceReference, usagePercentage)
 						usagePercentage = 100
 					}
 
@@ -109,13 +108,12 @@ func (s *EC2Service) printInstanceSpecs(ec2Specs []struct {
 	fmt.Print("\n")
 	table := tablewriter.NewWriter(os.Stdout)
 	headers := []string{"Resource Reference", "Instance Type", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"}
-	table.SetHeader(headers)
 
-	colors := make([]tablewriter.Colors, len(headers))
-	for i := range colors {
-		colors[i] = tablewriter.Colors{tablewriter.FgHiGreenColor}
+	// Apply ANSI color codes to headers
+	for i, header := range headers {
+		headers[i] = fmt.Sprintf("\x1b[32m%s\x1b[0m", header)
 	}
-	table.SetHeaderColor(colors...)
+	table.SetHeader(headers)
 
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
