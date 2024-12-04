@@ -95,8 +95,13 @@ func (s *LambdaService) printLambdasSpecs(lambdaSpecs []struct {
 }, region string) {
 	fmt.Print("\n")
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Lambda resource name", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"})
-	table.SetHeaderColor(tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor}, tablewriter.Colors{tablewriter.FgHiGreenColor})
+	headers := []string{"Lambda resource name", "vCPUs", "Memory (MiB)", "Estimated Monthly Power Consumption (kWh)", "Carbon impact (gCO2eq)"}
+
+	for i, header := range headers {
+		headers[i] = fmt.Sprintf("\x1b[32m%s\x1b[0m", header)
+	}
+	table.SetHeader(headers)
+
 	table.SetRowLine(true)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 

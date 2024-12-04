@@ -6,8 +6,6 @@ import (
 	"os"
 
 	"greenfra/src/cmd"
-
-	"github.com/fatih/color"
 )
 
 var (
@@ -17,21 +15,24 @@ var (
 )
 
 func init() {
-	flag.BoolVar(&executePlan, "exec-plan", false, "Specify wheter or not greenfra should execute terraform plan or you provide the tfplan file")
+	flag.BoolVar(&executePlan, "exec-plan", false, "Specify whether or not greenfra should execute terraform plan or you provide the tfplan file")
 
 	if envValue, exists := os.LookupEnv("GREENFRA_EXEC_PLAN"); exists && envValue == "true" {
 		executePlan = true
 	}
 
 	flag.Parse()
-	command = flag.Args()[0]
-	if len(flag.Args()) >= 2 {
-		planPath = flag.Args()[1]
+	args := flag.Args()
+	if len(args) > 0 {
+		command = args[0]
+	}
+	if len(args) >= 2 {
+		planPath = args[1]
 	}
 }
 
 func main() {
-	color.New(color.FgHiGreen).Println(cmd.AsciiArt)
+	fmt.Printf("\x1b[32m%s\x1b[0m\n", cmd.AsciiArt)
 
 	switch command {
 	case "help":
@@ -43,6 +44,6 @@ func main() {
 	case "analyze":
 		cmd.ListResources(executePlan, planPath)
 	default:
-		fmt.Println("Unkown command")
+		fmt.Println("Unknown command")
 	}
 }

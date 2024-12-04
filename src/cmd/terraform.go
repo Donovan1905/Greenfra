@@ -5,8 +5,6 @@ import (
 	"greenfra/src/services"
 	"greenfra/src/utils"
 	"log"
-
-	"github.com/fatih/color"
 )
 
 func ListResources(executePlan bool, planPath string) {
@@ -32,8 +30,7 @@ func ListResources(executePlan bool, planPath string) {
 		log.Fatalf("%v", err)
 	}
 
-	color.New(color.FgHiGreen).Printf("\nAWS Region: ")
-	fmt.Println(region)
+	fmt.Printf("\n\x1b[32mAWS Region: \x1b[0m%s\n", region)
 
 	changes, err := utils.ExtractResourceChanges(plan)
 	if err != nil {
